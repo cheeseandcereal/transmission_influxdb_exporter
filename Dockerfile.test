@@ -1,0 +1,18 @@
+FROM python:3.8-alpine
+
+WORKDIR /usr/src/app
+RUN apk --no-cache upgrade
+
+# Install build dependencies
+RUN apk --no-cache add g++
+# Install python dev dependencies
+COPY requirements.txt .
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+COPY dev_requirements.txt .
+RUN python3 -m pip install --no-cache-dir --upgrade -r dev_requirements.txt
+
+# Copy our actual application
+COPY --chown=1000:1000 . .
+RUN chmod 777 .
+
+CMD [ "sh", "tools.sh", "full-test" ]
