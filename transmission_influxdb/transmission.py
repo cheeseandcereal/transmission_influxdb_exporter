@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional, Any
 import re
+import base64
+import hashlib
 import logging
 
 from transmission import Transmission
@@ -57,6 +59,7 @@ class TransmissionClient(object):
                 "downloadedEver",
                 "error",
                 "hashString",
+                "id",
                 "name",
                 "peersConnected",
                 "percentDone",
@@ -69,6 +72,7 @@ class TransmissionClient(object):
         ).get("torrents")
         points = []
         for torrent in torrents:
+            unique_torrent_hash = get_unique_torrent_hash(self.name, torrent.get("id"), torrent.get("hashString"))
             tracker = ""
             # Only keep track of first tracker in any given torrent to not complicate tags
             match = url_domain_regex.match(torrent.get("trackers")[0].get("announce"))
@@ -96,10 +100,21 @@ class TransmissionClient(object):
                         "upload_speed": torrent.get("rateUpload"),
                         "connected_peers": torrent.get("peersConnected"),
                         "percent_done": float(torrent.get("percentDone")),
+                        # this field allows us to use distinct("unique_id") when doing influxdb queries against multiple torrents
+                        # with ambiguous times between collections (so we don't have to rely on group by fixed time intervals)
+                        "unique_id": unique_torrent_hash,
                     },
                 }
             )
         return points
+
+
+def get_unique_torrent_hash(client_name: str, torrent_id: int, infohash: str) -> str:
+    """Function for generating a deterministically unique string
+    for a torrent based on its client name, torrent id, and infohash"""
+    digest_str = f"{client_name}{torrent_id}{infohash}"
+    raw_digest = hashlib.blake2b(digest_str.encode("utf8"), digest_size=16).digest()
+    return base64.b64encode(raw_digest).decode("ascii").rstrip("=")
 
 
 def get_status(status_code: int) -> str:

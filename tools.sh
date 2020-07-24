@@ -48,7 +48,7 @@ elif [ "$1" = "clean" ]; then
 elif [ "$1" = "venv" ]; then
     rm -rf .venv/
     $py_exec -m venv .venv
-    source .venv/bin/activate
+    . .venv/bin/activate
     pip install -U pip setuptools wheel
     pip install -U -r dev_requirements.txt
     pip install -r requirements.txt
