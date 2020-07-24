@@ -35,6 +35,8 @@ def _load_config_if_necessary() -> None:
             if len(transmission_clients) == 0:
                 raise Exception("No transmission clients configured!")
             for client in transmission_clients:
+                if not isinstance(client.get("name"), str):
+                    raise Exception("name must exist within transmission_clients in config.json and be a string")
                 if not isinstance(client.get("rpc_addr"), str):
                     raise Exception("rpc_addr must exist within transmission_clients in config.json and be a string")
                 if not isinstance(client.get("rpc_port"), int):
@@ -75,6 +77,7 @@ def get_torrent_client_configs() -> List[Dict[str, Any]]:
     clients = config_cache["transmission_clients"]
     return [
         {
+            "name": options["name"],
             "host": options["rpc_addr"],
             "port": options["rpc_port"],
             "path": options["rpc_path"],

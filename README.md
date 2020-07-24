@@ -1,6 +1,6 @@
 # Transmission InfluxDB Metrics Exporter
 
-This is program scrapes statistics from running transmission torrent daemon(s), and inserts them into InfluxDB.
+This is program scrapes statistics from running [transmission](https://transmissionbt.com/) torrent daemon(s), and inserts them into InfluxDB.
 
 This allows for querying of transmission time-series statistics for use with applications such as dashboards.
 
@@ -24,12 +24,13 @@ An example configuration:
   },
   "transmission_clients": [  // Specify as many as desired
     {
+      "name": "transmission",  // The name used to tag db datapoints with for this transmission daemon. Useful to make unique when you have more than one client
       "rpc_addr": "transmission.remote.host.or.ip",
       "rpc_port": 9091,
       "rpc_path": "/transmission/rpc",
       "rpc_user": "user",
       "rpc_password": "someRPCpasswordFromTransmissionDaemon",
-      "rpc_verified_tls": true,  // note that unverified ssl/tls (such as with self-signed cert) is not currently supported
+      "rpc_verified_tls": false,  // note that unverified ssl/tls (such as with self-signed cert) is not currently supported
       "rpc_timeout": 60,  // how long to allow an RPC request to take before timing out with an error
     }
   ]
