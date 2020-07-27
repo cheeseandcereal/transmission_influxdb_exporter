@@ -56,12 +56,14 @@ def write_datapoints(data: List[Dict[str, Any]]) -> None:
 # Retrieval can be done by simply grabbing the 'data' field from the last point in the
 # measurement named with the 'key' from an influxdb query if it is not already locally cached
 
+
 def write_kvp(key: str, data: str) -> None:
     # First write-through to cache
     key_value_cache[key] = data
     _connect_if_necessary()
     client.drop_measurement(key)
-    client.write_points([{'measurement': key, 'tags': {}, 'fields': {'data': data}}])
+    client.write_points([{"measurement": key, "tags": {}, "fields": {"data": data}}])
+
 
 def get_kvp(key: str) -> str:
     if key in key_value_cache:
@@ -70,7 +72,7 @@ def get_kvp(key: str) -> str:
     _connect_if_necessary()
     influx_points = list(client.query(f'select last("data") from "{key}";').get_points())
     if not influx_points:
-        return ''
+        return ""
     data = influx_points[0]["last"]
     key_value_cache[key] = data
     return data

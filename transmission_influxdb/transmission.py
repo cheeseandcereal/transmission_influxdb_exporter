@@ -30,34 +30,64 @@ class TransmissionClient(object):
     def __repr__(self) -> str:
         return f"Transmission({self.name} [{self.address}])"
 
-    def get_data_points(self, time: Optional[str] = None) -> List[Dict[str, Any]]:
-        # TODO: Break this function up so it's not an ugly monolith
-        if time is None:
-            time = utils.now()
+    def _create_empty_tracker_point(self, time: str, tracker: str) -> Dict[str, Any]:
+        return {
+            "measurement": "trackers",
+            "time": time,
+            "tags": {"client_name": self.name, "tracker": tracker},
+            "fields": {
+                "downloaded": 0,
+                "uploaded": 0,
+                "download_speed": 0,
+                "upload_speed": 0,
+                "connected_peers": 0,
+                "seeding": 0,
+                "downloading": 0,
+                "stopped": 0,
+                "errored": 0,
+            },
+        }
+
+    def _get_client_stats_point(self, time: str) -> Dict[str, Any]:
         session = self.client.call("session-get", fields=["download-dir", "version"])
         version = session.get("version")
         free_space = self.client.call("free-space", path=session.get("download-dir")).get("size-bytes")
         stats = self.client.call("session-stats")
-        stats_point = {
-                "measurement": "stats",
-                "time": time,
-                "tags": {"client_name": self.name, "version": version},
-                "fields": {
-                    "free_space": free_space,
-                    "downloaded": stats.get("cumulative-stats").get("downloadedBytes"),
-                    "uploaded": stats.get("cumulative-stats").get("uploadedBytes"),
-                    "active_torrents": stats.get("activeTorrentCount"),
-                    "paused_torrents": stats.get("pausedTorrentCount"),
-                    "download_speed": stats.get("downloadSpeed"),
-                    "upload_speed": stats.get("uploadSpeed"),
-                    # These counts are iterated when going through torrents below
-                    "seeding": 0,
-                    "downloading": 0,
-                    "errored": 0,
-                    "stopped": 0,
-                    "connected_peers": 0
-                },
-            }
+        return {
+            "measurement": "stats",
+            "time": time,
+            "tags": {"client_name": self.name, "version": version},
+            "fields": {
+                "free_space": free_space,
+                "downloaded": stats.get("cumulative-stats").get("downloadedBytes"),
+                "uploaded": stats.get("cumulative-stats").get("uploadedBytes"),
+                "active_torrents": stats.get("activeTorrentCount"),
+                "paused_torrents": stats.get("pausedTorrentCount"),
+                "download_speed": stats.get("downloadSpeed"),
+                "upload_speed": stats.get("uploadSpeed"),
+                # These counts are iterated when going through torrents below
+                "seeding": 0,
+                "downloading": 0,
+                "errored": 0,
+                "stopped": 0,
+                "connected_peers": 0,
+            },
+        }
+
+    def _get_historical_tracker_stats(self) -> Dict[str, Any]:
+        tracker_stat_data = influxdb.get_kvp(TRACKER_STAT_STORAGE_KEY)
+        if not tracker_stat_data:
+            tracker_stat_data = "{}"
+        historical_tracker_stats = json.loads(tracker_stat_data)
+        if self.name not in historical_tracker_stats:
+            historical_tracker_stats[self.name] = {}
+        return historical_tracker_stats
+
+    def get_data_points(self, time: Optional[str] = None) -> List[Dict[str, Any]]:
+        # TODO: Break this function up so it's not an ugly monolith
+        if time is None:
+            time = utils.now()
+        stats_point = self._get_client_stats_point(time)
         torrents = self.client.call(
             "torrent-get",
             fields=[
@@ -75,12 +105,7 @@ class TransmissionClient(object):
                 "uploadedEver",
             ],
         ).get("torrents")
-        tracker_stat_data = influxdb.get_kvp(TRACKER_STAT_STORAGE_KEY)
-        if not tracker_stat_data:
-            tracker_stat_data = '{}'
-        historical_tracker_stats = json.loads(tracker_stat_data)
-        if self.name not in historical_tracker_stats:
-            historical_tracker_stats[self.name] = {}
+        historical_tracker_stats = self._get_historical_tracker_stats()
         tracker_points = {}
         points = []
         for torrent in torrents:
@@ -94,33 +119,14 @@ class TransmissionClient(object):
                 log.error(f"Torrent {torrent.get('name')} could not parse tracker. Not recording this data point")
                 continue
             if tracker not in tracker_points:
-                tracker_points[tracker] = {
-                    "measurement": "trackers",
-                    "time": time,
-                    "tags": {
-                        "client_name": self.name,
-                        "tracker": tracker
-                    },
-                    "fields": {
-                        # These counts are iterated when going through torrents below
-                        "downloaded": 0,
-                        "uploaded": 0,
-                        "download_speed": 0,
-                        "upload_speed": 0,
-                        "connected_peers": 0,
-                        "seeding": 0,
-                        "downloading": 0,
-                        "stopped": 0,
-                        "errored": 0,
-                    }
-                }
+                tracker_points[tracker] = self._create_empty_tracker_point(time, tracker)
             status = get_status(torrent.get("status"))
             # Append stats for these torrents to their relevant tracker/client points
             if tracker not in historical_tracker_stats[self.name]:
                 historical_tracker_stats[self.name][tracker] = {}
             historical_tracker_stats[self.name][tracker][unique_torrent_hash] = {
                 "downloaded": torrent.get("downloadedEver"),
-                "uploaded": torrent.get("uploadedEver")
+                "uploaded": torrent.get("uploadedEver"),
             }
             if status == "downloading":
                 stats_point["fields"]["downloading"] += 1
@@ -167,6 +173,8 @@ class TransmissionClient(object):
         influxdb.write_kvp(TRACKER_STAT_STORAGE_KEY, json.dumps(historical_tracker_stats))
         for tracker, tracker_torrent_stats in historical_tracker_stats[self.name].items():
             for _, values in tracker_torrent_stats.items():
+                if tracker not in tracker_points:
+                    tracker_points[tracker] = self._create_empty_tracker_point(time, tracker)
                 tracker_points[tracker]["fields"]["downloaded"] += values["downloaded"]
                 tracker_points[tracker]["fields"]["uploaded"] += values["uploaded"]
             points.append(tracker_points[tracker])
