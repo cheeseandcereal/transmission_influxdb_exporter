@@ -119,7 +119,6 @@ class TransmissionClient(object):
                 continue
             if tracker not in tracker_points:
                 tracker_points[tracker] = self._create_empty_tracker_point(time, tracker)
-            status = get_status(torrent.get("status"))
             # Append stats for these torrents to their relevant tracker/client points
             if tracker not in historical_tracker_stats[self.name]:
                 historical_tracker_stats[self.name][tracker] = {}
@@ -127,6 +126,7 @@ class TransmissionClient(object):
                 "downloaded": torrent.get("downloadedEver"),
                 "uploaded": torrent.get("uploadedEver"),
             }
+            status = get_status(torrent.get("status"))
             if status == "downloading":
                 stats_point["fields"]["downloading"] += 1
                 tracker_points[tracker]["fields"]["downloading"] += 1
@@ -153,7 +153,7 @@ class TransmissionClient(object):
                         "infohash": torrent.get("hashString"),
                         "torrent_name": torrent.get("name"),
                         "tracker": tracker,
-                        "error": torrent.get("error") != 0,
+                        "error": torrent.get("error"),
                         "status": status,
                     },
                     "fields": {
