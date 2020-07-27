@@ -61,8 +61,7 @@ class TransmissionClient(object):
                 "free_space": free_space,
                 "downloaded": stats.get("cumulative-stats").get("downloadedBytes"),
                 "uploaded": stats.get("cumulative-stats").get("uploadedBytes"),
-                "active_torrents": stats.get("activeTorrentCount"),
-                "paused_torrents": stats.get("pausedTorrentCount"),
+                "torrents": stats.get("torrentCount"),
                 "download_speed": stats.get("downloadSpeed"),
                 "upload_speed": stats.get("uploadSpeed"),
                 # These counts are iterated when going through torrents below
