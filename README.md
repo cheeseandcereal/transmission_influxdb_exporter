@@ -45,7 +45,7 @@ In order to run this, there are different requirements for the local machine run
 
 - Remote Machine
   - Running transmission daemon (only version 3.00+) accessible over the network with the specified RPC options in the config.
-  - Running [influxdb](https://www.influxdata.com/time-series-platform/) 1.X instance accessible over the network with the specified options in the config.
+  - Running [influxdb](https://www.influxdata.com/time-series-platform/) 1.X instance accessible over the network with the specified options in the config. Must have flux _and_ influxql enabled.
   - Note: The transmission daemon and db can be on the same (or different) machines.
 - Local Machine (with Docker)
   - No additional requirements. See below if you do not wish to use docker.
@@ -88,4 +88,14 @@ WantedBy=default.target
 
 ## Grafana Dashboard
 
-TBD
+Check the [grafana](grafana/) folder for a dashboard with many pre-built components.
+
+I recommend you start with this dashboard and remove the components you do not want, and rearrange the remaining ones.
+
+### Dashboard Requirements
+
+In order to use this dashboard, you must have grafana 7.1+ with influxDB configured as a datasource ***with the flux query language*** (not influxql).
+
+### Screenshot
+
+![Dashboard Screenshot](grafana/screenshot.png)
