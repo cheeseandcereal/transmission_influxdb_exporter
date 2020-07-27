@@ -98,7 +98,7 @@ class TransmissionClient(object):
                     "measurement": "trackers",
                     "time": time,
                     "tags": {
-                        "client_name": self.name
+                        "client_name": self.name,
                         "tracker": tracker
                     },
                     "fields": {
@@ -136,8 +136,8 @@ class TransmissionClient(object):
                 tracker_points[tracker]["fields"]["errored"] += 1
             tracker_points[tracker]["fields"]["download_speed"] += torrent.get("rateDownload")
             tracker_points[tracker]["fields"]["upload_speed"] += torrent.get("rateUpload")
-            tracker_points[tracker]["fields"]["peers_connected"] += torrent.get("peersConnected")
-            stats_point["fields"]["peers_connected"] += torrent.get("peersConnected")
+            tracker_points[tracker]["fields"]["connected_peers"] += torrent.get("peersConnected")
+            stats_point["fields"]["connected_peers"] += torrent.get("peersConnected")
             # Create point for this individual torrent
             points.append(
                 {
@@ -165,8 +165,8 @@ class TransmissionClient(object):
                 }
             )
         influxdb.write_kvp(TRACKER_STAT_STORAGE_KEY, json.dumps(historical_tracker_stats))
-        for _, tracker in historical_tracker_stats.items():
-            for _, values in tracker.items():
+        for tracker, tracker_torrent_stats in historical_tracker_stats[self.name].items():
+            for _, values in tracker_torrent_stats.items():
                 tracker_points[tracker]["fields"]["downloaded"] += values["downloaded"]
                 tracker_points[tracker]["fields"]["uploaded"] += values["uploaded"]
             points.append(tracker_points[tracker])

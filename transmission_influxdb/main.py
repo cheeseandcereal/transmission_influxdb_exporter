@@ -21,10 +21,9 @@ def main() -> None:
             data_points = []
             for client in transmission_clients:
                 log.debug(f"Gathering from {client.name}")
-                daemon_stats = client.get_daemon_stats(data_point_time)
-                torrent_stats = client.get_torrent_stats(data_point_time)
-                log.info(f"Transmission client {client.name} {len(torrent_stats)} torrents found for recording")
-                data_points += daemon_stats + torrent_stats
+                client_data_points = client.get_data_points(data_point_time)
+                log.info(f"Transmission client {client.name} {len(client_data_points)} points found for recording")
+                data_points += client_data_points
             log.info(f"Writing {len(data_points)} data points to influxdb")
             influxdb.write_datapoints(data_points)
             log.debug("Completed main loop")
