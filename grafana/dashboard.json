@@ -61,7 +61,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1595832832503,
+  "iteration": 1596409212503,
   "links": [],
   "panels": [
     {
@@ -120,7 +120,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 143
+                "value": 148
               }
             ]
           },
@@ -144,7 +144,57 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 330
+                "value": 235
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Error Code"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "from": "",
+                    "id": 0,
+                    "text": "Tracker Warning",
+                    "to": "",
+                    "type": 1,
+                    "value": "1"
+                  },
+                  {
+                    "from": "",
+                    "id": 1,
+                    "text": "Tracker Error",
+                    "to": "",
+                    "type": 1,
+                    "value": "2"
+                  },
+                  {
+                    "from": "",
+                    "id": 2,
+                    "text": "Local Error",
+                    "to": "",
+                    "type": 1,
+                    "value": "3"
+                  }
+                ]
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Error Code Reference",
+                    "url": "https://github.com/transmission/transmission/blob/10fc016239cc8615286d7ee0d830c0012001b109/libtransmission/transmission.h#L1674"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 125
               }
             ]
           }
@@ -180,7 +230,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "from(bucket: \"transmission/transmission_exporter_retention\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"torrents\" and r.error == \"True\" and r._field == \"unique_id\")\n  |> last()\n  |> keep(columns: [\"client_name\", \"torrent_name\", \"tracker\", \"_time\", \"_value\"])\n  |> first()\n  |> group(columns: [])\n  |> drop(columns: [\"_value\"])\n  |> rename(columns: {_time: \"Last Error Time\", client_name: \"Client Name\", torrent_name: \"Torrent Name\", tracker: \"Tracker\"})",
+          "query": "from(bucket: \"transmission/transmission_exporter_retention\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"torrents\" and r.error != \"0\" and r._field == \"downloaded\")\n  |> group(columns: [\"infohash\", \"client_name\"])\n  |> last()\n  |> keep(columns: [\"client_name\", \"torrent_name\", \"tracker\", \"error\", \"_time\"])\n  |> group(columns: [])\n  |> rename(columns: {_time: \"Last Error Time\", client_name: \"Client Name\", torrent_name: \"Torrent Name\", tracker: \"Tracker\", error: \"Error Code\"})",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -213,7 +263,8 @@
             },
             "indexByName": {
               "Client Name": 4,
-              "Error Time": 5,
+              "Error Code": 5,
+              "Last Error Time": 6,
               "Torrent Name": 2,
               "Tracker": 3,
               "result": 0,
@@ -3996,7 +4047,7 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -4013,7 +4064,7 @@
     ]
   },
   "timezone": "",
-  "title": "Torrent",
-  "uid": "wSvTGgVGz",
-  "version": 15
+  "title": "Transmission",
+  "uid": "fNDztFsJa",
+  "version": 1
 }
