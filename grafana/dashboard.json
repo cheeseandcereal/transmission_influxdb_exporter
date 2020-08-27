@@ -14,7 +14,7 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "7.1.1"
+      "version": "7.1.5"
     },
     {
       "type": "panel",
@@ -61,7 +61,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1596409212503,
+  "iteration": 1598985780352,
   "links": [],
   "panels": [
     {
@@ -211,7 +211,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -358,7 +358,7 @@
           }
         ]
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -377,7 +377,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "preFilter = from(bucket: \"transmission/transmission_exporter_retention\")\n  |> range(start: -1d)\n  |> filter(fn: (r) => r._measurement == \"torrents\" and r._field == \"uploaded\")\n  |> group(columns: [\"infohash\", \"client_name\"])\n\nfirstVals = preFilter\n  |> first()\n  |> group(columns: [\"infohash\", \"torrent_name\", \"tracker\"])\n  |> sum(column: \"_value\")\n\nlastVals = preFilter\n  |> last()\n  |> group(columns: [\"infohash\", \"torrent_name\", \"tracker\"])\n  |> sum(column: \"_value\")\n  \njoin(tables: {first: firstVals, last: lastVals}, on: [\"infohash\", \"torrent_name\", \"tracker\"], method: \"inner\")\n  |> map(fn: (r) => ({ r with _value: r._value_last - r._value_first }))\n  |> keep(columns: [\"_value\", \"torrent_name\", \"tracker\"])\n  |> group(columns: [])\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)\n  |> rename(columns: {_value: \"Uploaded\", torrent_name: \"Torrent Name\", tracker: \"Tracker\"})",
+          "query": "preFilter = from(bucket: \"transmission/transmission_exporter_retention\")\n  |> range(start: -1d)\n  |> filter(fn: (r) => r._measurement == \"torrents\" and r._field == \"uploaded\")\n  |> group(columns: [\"infohash\", \"client_name\"])\n  |> sort(columns: [\"_time\"])\n\nfirstVals = preFilter\n  |> first()\n  |> group(columns: [\"infohash\", \"torrent_name\", \"tracker\"])\n  |> sum(column: \"_value\")\n\nlastVals = preFilter\n  |> last()\n  |> group(columns: [\"infohash\", \"torrent_name\", \"tracker\"])\n  |> sum(column: \"_value\")\n  \njoin(tables: {first: firstVals, last: lastVals}, on: [\"infohash\", \"torrent_name\", \"tracker\"], method: \"inner\")\n  |> map(fn: (r) => ({ r with _value: r._value_last - r._value_first }))\n  |> keep(columns: [\"_value\", \"torrent_name\", \"tracker\"])\n  |> group(columns: [])\n  |> sort(columns: [\"_value\"], desc: true)\n  |> limit(n: 10)\n  |> rename(columns: {_value: \"Uploaded\", torrent_name: \"Torrent Name\", tracker: \"Tracker\"})",
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
@@ -472,7 +472,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -558,7 +558,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -644,7 +644,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -724,7 +724,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -848,7 +848,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -992,7 +992,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -1078,7 +1078,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -1164,7 +1164,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "targets": [
         {
           "groupBy": [
@@ -1244,7 +1244,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1369,7 +1369,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1508,7 +1508,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1632,7 +1632,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1756,7 +1756,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1881,7 +1881,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2007,7 +2007,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2133,7 +2133,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2259,7 +2259,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2398,7 +2398,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2522,7 +2522,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2647,7 +2647,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2781,7 +2781,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2907,7 +2907,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3034,7 +3034,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3160,7 +3160,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3300,7 +3300,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3426,7 +3426,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3550,7 +3550,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3674,7 +3674,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3799,7 +3799,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -3925,7 +3925,7 @@
       "linewidth": 1,
       "nullPointMode": "null",
       "percentage": false,
-      "pluginVersion": "7.1.1",
+      "pluginVersion": "7.1.5",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
