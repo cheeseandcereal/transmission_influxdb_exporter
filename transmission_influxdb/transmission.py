@@ -1,6 +1,8 @@
 from typing import List, Dict, Optional, Any
 import re
 import json
+import base64
+import hashlib
 import logging
 
 from transmission import Transmission
@@ -88,10 +90,10 @@ class TransmissionClient(object):
         torrents = self.client.call(
             "torrent-get",
             fields=[
+                "addedDate",
                 "downloadedEver",
                 "error",
                 "hashString",
-                "id",
                 "name",
                 "peersConnected",
                 "percentDone",
@@ -119,7 +121,7 @@ class TransmissionClient(object):
             # Append stats for these torrents to their relevant tracker/client points
             if tracker not in historical_tracker_stats[self.name]:
                 historical_tracker_stats[self.name][tracker] = {}
-            historical_tracker_stats[self.name][tracker][torrent.get("id")] = {
+            historical_tracker_stats[self.name][tracker][get_unique_torrent_id(torrent.get("hashString"), torrent.get("addedDate"))] = {
                 "downloaded": torrent.get("downloadedEver"),
                 "uploaded": torrent.get("uploadedEver"),
             }
@@ -185,3 +187,13 @@ def get_status(status_code: int) -> str:
         return "downloading"
     else:
         return "seeding"
+
+
+def get_unique_torrent_id(infohash: str, add_date: int) -> str:
+    """This function creates a unique string based on an instance of a torrent in transmission.
+    This takes into account the infohash and added time so we can track the same torrent as separate
+    instances if a torrent was removed then re-added. This way we can track their stats separately."""
+    hash_data = f"{infohash}{add_date}".encode("ascii")
+    hash_digest = hashlib.blake2b(hash_data, digest_size=12).digest()
+    # turn the digest bytes back into a string via base64
+    return base64.b64encode(hash_digest).decode("ascii")
