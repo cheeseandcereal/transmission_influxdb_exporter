@@ -14,7 +14,7 @@ TRACKER_STAT_STORAGE_KEY = "tracker_storage"
 
 log = logging.getLogger("transmission")
 
-url_domain_regex = re.compile(r"(https?|udp|tcp):\/\/(.*?)\/.*", re.IGNORECASE | re.UNICODE)
+url_domain_regex = re.compile(r"(https?|udp|tcp):\/\/(.*?)(:\d+)?\/.*", re.IGNORECASE | re.UNICODE)
 
 
 class TransmissionClient(object):
