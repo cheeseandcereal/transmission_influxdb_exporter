@@ -14,7 +14,7 @@ TRACKER_STAT_STORAGE_KEY = "tracker_storage"
 
 log = logging.getLogger("transmission")
 
-url_domain_regex = re.compile(r"(https?|udp|tcp):\/\/(.*?)(:\d+)?\/.*", re.IGNORECASE | re.UNICODE)
+url_domain_regex = re.compile(r"(https?|udp|tcp):\/\/(tracker\.)?(.*?)(:\d+)?\/.*", re.IGNORECASE | re.UNICODE)
 
 
 class TransmissionClient(object):
@@ -112,7 +112,7 @@ class TransmissionClient(object):
             # Only keep track of first tracker in any given torrent to not complicate tags
             match = url_domain_regex.match(torrent.get("trackers")[0].get("announce"))
             if match:
-                tracker = match.group(2)
+                tracker = match.group(3)
             else:
                 log.error(f"Torrent {torrent.get('name')} could not parse tracker. Not recording this data point")
                 continue
