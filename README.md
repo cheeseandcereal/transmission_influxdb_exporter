@@ -18,7 +18,7 @@ An example configuration:
     "host_port": 8086,
     "use_ssl": false,
     "verify_ssl": false,
-    "database": "transmission",  // database will be created if it doesn't exist
+    "database": "transmission",  // database will be created if it doesn't exist (don't change if using provided grafana dashboard)
     "username": "root",  // if authentication is disabled on influxdb, leave user/pass as-is
     "password": "root"
   },
