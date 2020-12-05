@@ -24,11 +24,16 @@ class TransmissionClient(object):
         self.address = f"{client_config['host']}:{client_config['port']}"
         log.info(f"Connecting to transmission daemon {self.name} at {self.address}")
         self.client = Transmission(**client_config)
-        version = self.client.call("session-get", fields=["version"]).get("version")
-        log.debug(f"{self.name} connected. Transmission version: {version}")
+        self.connected = False
 
     def __repr__(self) -> str:
         return f"Transmission({self.name} [{self.address}])"
+
+    def connect_if_necessary(self) -> None:
+        if not self.connected:
+            version = self.client.call("session-get", fields=["version"]).get("version")
+            log.debug(f"{self.name} connected. Transmission version: {version}")
+            self.connected = True
 
     def _create_empty_tracker_point(self, time: str, tracker: str) -> Dict[str, Any]:
         return {
@@ -84,6 +89,7 @@ class TransmissionClient(object):
 
     def get_data_points(self, time: Optional[str] = None) -> List[Dict[str, Any]]:
         # TODO: Break this function up so it's not an ugly monolith
+        self.connect_if_necessary()
         if time is None:
             time = utils.now()
         stats_point = self._get_client_stats_point(time)
