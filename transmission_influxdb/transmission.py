@@ -22,7 +22,6 @@ class TransmissionClient(object):
         self.name = client_config["name"]
         del client_config["name"]
         self.address = f"{client_config['host']}:{client_config['port']}"
-        log.info(f"Connecting to transmission daemon {self.name} at {self.address}")
         self.client = Transmission(**client_config)
         self.connected = False
 
@@ -31,6 +30,7 @@ class TransmissionClient(object):
 
     def connect_if_necessary(self) -> None:
         if not self.connected:
+            log.info(f"Connecting to transmission daemon {self.name} at {self.address}")
             version = self.client.call("session-get", fields=["version"]).get("version")
             log.debug(f"{self.name} connected. Transmission version: {version}")
             self.connected = True
