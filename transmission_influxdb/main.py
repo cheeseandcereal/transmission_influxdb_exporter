@@ -25,8 +25,8 @@ def main() -> None:
                     client_data_points = client.get_data_points(data_point_time)
                     log.info(f"Transmission client {client.name} {len(client_data_points)} points found for recording")
                     data_points += client_data_points
-                except Exception:
-                    log.exception(f"Error collecting data points from transmission client {client.name}")
+                except Exception as e:
+                    log.error(f"Error collecting data points from transmission client {client.name}\n{e}")
             log.info(f"Writing {len(data_points)} data points to influxdb")
             influxdb.write_datapoints(data_points)
             log.debug("Completed main loop")
