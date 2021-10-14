@@ -32,6 +32,7 @@ An example configuration:
       "rpc_password": "someRPCpasswordFromTransmissionDaemon",
       "rpc_verified_tls": false,  // note that unverified ssl/tls (such as with self-signed cert) is not currently supported
       "rpc_timeout": 60,  // how long to allow an RPC request to take before timing out with an error
+      "disable_individual_torrent_collection": false  // optional boolean which can disable making points for individual torrents (significantly reduces influxdb usage but some dashboard graphs won't work)
     }
   ]
 }

@@ -21,6 +21,8 @@ class TransmissionClient(object):
     def __init__(self, client_config: Dict[str, Any]) -> None:
         self.name = client_config["name"]
         del client_config["name"]
+        self.disable_individual_collection = client_config["disable_individual_collection"]
+        del client_config["disable_individual_collection"]
         self.address = f"{client_config['host']}:{client_config['port']}"
         self.client = Transmission(**client_config)
         self.connected = False
@@ -148,29 +150,30 @@ class TransmissionClient(object):
             tracker_points[tracker]["fields"]["upload_speed"] += torrent.get("rateUpload")
             tracker_points[tracker]["fields"]["connected_peers"] += torrent.get("peersConnected")
             stats_point["fields"]["connected_peers"] += torrent.get("peersConnected")
-            # Create point for this individual torrent
-            points.append(
-                {
-                    "measurement": "torrents",
-                    "time": time,
-                    "tags": {
-                        "client_name": self.name,
-                        "infohash": torrent.get("hashString"),
-                        "torrent_name": torrent.get("name"),
-                        "tracker": tracker,
-                        "error": str(torrent.get("error")),
-                        "status": status,
-                    },
-                    "fields": {
-                        "downloaded": torrent.get("downloadedEver"),
-                        "uploaded": torrent.get("uploadedEver"),
-                        "download_speed": torrent.get("rateDownload"),
-                        "upload_speed": torrent.get("rateUpload"),
-                        "connected_peers": torrent.get("peersConnected"),
-                        "percent_done": float(torrent.get("percentDone")),
-                    },
-                }
-            )
+            if not self.disable_individual_collection:
+                # Create point for this individual torrent
+                points.append(
+                    {
+                        "measurement": "torrents",
+                        "time": time,
+                        "tags": {
+                            "client_name": self.name,
+                            "infohash": torrent.get("hashString"),
+                            "torrent_name": torrent.get("name"),
+                            "tracker": tracker,
+                            "error": str(torrent.get("error")),
+                            "status": status,
+                        },
+                        "fields": {
+                            "downloaded": torrent.get("downloadedEver"),
+                            "uploaded": torrent.get("uploadedEver"),
+                            "download_speed": torrent.get("rateDownload"),
+                            "upload_speed": torrent.get("rateUpload"),
+                            "connected_peers": torrent.get("peersConnected"),
+                            "percent_done": float(torrent.get("percentDone")),
+                        },
+                    }
+                )
         influxdb.write_kvp(TRACKER_STAT_STORAGE_KEY, json.dumps(historical_tracker_stats))
         for tracker, tracker_torrent_stats in historical_tracker_stats[self.name].items():
             for _, values in tracker_torrent_stats.items():

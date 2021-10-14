@@ -51,6 +51,9 @@ def _load_config_if_necessary() -> None:
                     raise Exception("rpc_verified_tls must exist within transmission_clients in config.json and be a boolean")
                 if not isinstance(client.get("rpc_timeout"), int):
                     raise Exception("rpc_timeout must exist within transmission_clients in config.json and be an integer")
+                # Optional boolean
+                if not isinstance(client.get("disable_individual_torrent_collection", False), bool):
+                    raise Exception("disable_individual_torrent_collection must be a boolean if it exists in config.json")
 
 
 def get_wait_time() -> int:
@@ -85,6 +88,7 @@ def get_torrent_client_configs() -> List[Dict[str, Any]]:
             "password": options["rpc_password"],
             "ssl": options["rpc_verified_tls"],
             "timeout": options["rpc_timeout"],
+            "disable_individual_collection": options.get("disable_individual_torrent_collection", False),
         }
         for options in clients
     ]
