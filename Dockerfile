@@ -1,4 +1,4 @@
-FROM python:3.8-alpine AS base
+FROM python:3.10-alpine AS base
 
 WORKDIR /usr/src/app
 RUN apk --no-cache upgrade
@@ -11,7 +11,7 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 FROM base AS release
 # Copy the installed python dependencies from the builder
-COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 # Copy the app
 COPY --chown=1000:1000 . .
 
