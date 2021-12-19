@@ -118,12 +118,12 @@ class TransmissionClient(object):
         for torrent in torrents:
             tracker = ""
             # Only keep track of first tracker in any given torrent to not complicate tags
-            tracker_list = torrent.get("trackers")
-            match = url_domain_regex.match((tracker_list[0] if tracker_list else {}).get("announce"))
+            first_tracker = torrent.get("trackers")[0].get("announce") if torrent.get("trackers") else "" 
+            match = url_domain_regex.match(first_tracker)
             if match:
                 tracker = match.group(3)
             else:
-                log.error(f"Torrent {torrent.get('name')} could not get tracker. Not recording this data point")
+                log.warning(f"Torrent {torrent.get('name')} could not get tracker. Not recording this data point")
                 continue
             if tracker not in tracker_points:
                 tracker_points[tracker] = self._create_empty_tracker_point(time, tracker)
