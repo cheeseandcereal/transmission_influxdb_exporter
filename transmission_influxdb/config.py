@@ -80,13 +80,13 @@ def get_torrent_client_configs() -> List[Dict[str, Any]]:
     clients = config_cache["transmission_clients"]
     return [
         {
+            "protocol": "https" if options["rpc_verified_tls"] else "http",
+            "username": options["rpc_user"],
+            "password": options["rpc_password"],
             "name": options["name"],
             "host": options["rpc_addr"],
             "port": options["rpc_port"],
             "path": options["rpc_path"],
-            "username": options["rpc_user"],
-            "password": options["rpc_password"],
-            "ssl": options["rpc_verified_tls"],
             "timeout": options["rpc_timeout"],
             "disable_individual_collection": options.get("disable_individual_torrent_collection", False),
         }

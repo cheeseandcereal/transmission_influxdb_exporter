@@ -1,14 +1,17 @@
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 import re
 import json
 import base64
 import hashlib
 import logging
 
-from transmission import Transmission
+from transmission_rpc import Client
 
 from transmission_influxdb import influxdb
 from transmission_influxdb import utils
+
+if TYPE_CHECKING:
+    from transmission_rpc import Status
 
 TRACKER_STAT_STORAGE_KEY = "tracker_storage"
 
@@ -24,7 +27,7 @@ class TransmissionClient(object):
         self.disable_individual_collection = client_config["disable_individual_collection"]
         del client_config["disable_individual_collection"]
         self.address = f"{client_config['host']}:{client_config['port']}"
-        self.client = Transmission(**client_config)
+        self.client = Client(**client_config)
         self.connected = False
 
     def __repr__(self) -> str:
@@ -33,7 +36,7 @@ class TransmissionClient(object):
     def connect_if_necessary(self) -> None:
         if not self.connected:
             log.info(f"Connecting to transmission daemon {self.name} at {self.address}")
-            version = self.client.call("session-get", fields=["version"]).get("version")
+            version = self.client.get_session().version
             log.debug(f"{self.name} connected. Transmission version: {version}")
             self.connected = True
 
@@ -56,21 +59,20 @@ class TransmissionClient(object):
         }
 
     def _get_client_stats_point(self, time: str) -> Dict[str, Any]:
-        session = self.client.call("session-get", fields=["download-dir", "version"])
-        version = session.get("version")
-        free_space = self.client.call("free-space", path=session.get("download-dir")).get("size-bytes")
-        stats = self.client.call("session-stats")
+        session = self.client.get_session()
+        free_space = self.client.free_space(session.download_dir)
+        stats = self.client.session_stats()
         return {
             "measurement": "stats",
             "time": time,
-            "tags": {"client_name": self.name, "version": version},
+            "tags": {"client_name": self.name, "version": session.version},
             "fields": {
                 "free_space": free_space,
-                "downloaded": stats.get("cumulative-stats").get("downloadedBytes"),
-                "uploaded": stats.get("cumulative-stats").get("uploadedBytes"),
-                "torrents": stats.get("torrentCount"),
-                "download_speed": stats.get("downloadSpeed"),
-                "upload_speed": stats.get("uploadSpeed"),
+                "downloaded": stats.cumulative_stats.downloaded_bytes,
+                "uploaded": stats.cumulative_stats.uploaded_bytes,
+                "torrents": stats.torrent_count,
+                "download_speed": stats.download_speed,
+                "upload_speed": stats.upload_speed,
                 # These counts are iterated when going through torrents below
                 "seeding": 0,
                 "downloading": 0,
@@ -95,9 +97,8 @@ class TransmissionClient(object):
         if time is None:
             time = utils.now()
         stats_point = self._get_client_stats_point(time)
-        torrents = self.client.call(
-            "torrent-get",
-            fields=[
+        torrents = self.client.get_torrents(
+            arguments=[
                 "addedDate",
                 "downloadedEver",
                 "error",
@@ -110,31 +111,31 @@ class TransmissionClient(object):
                 "status",
                 "trackers",
                 "uploadedEver",
-            ],
-        ).get("torrents")
+            ]
+        )
         historical_tracker_stats = self._get_historical_tracker_stats()
         tracker_points = {}
         points = []
         for torrent in torrents:
             tracker = ""
             # Only keep track of first tracker in any given torrent to not complicate tags
-            first_tracker = torrent.get("trackers")[0].get("announce") if torrent.get("trackers") else "" 
+            first_tracker = torrent.trackers[0].announce if torrent.trackers else ""
             match = url_domain_regex.match(first_tracker)
             if match:
                 tracker = match.group(3)
             else:
-                log.warning(f"Torrent {torrent.get('name')} could not get tracker. Not recording this data point")
+                log.warning(f"Torrent {torrent.name} could not get tracker. Not recording this data point")
                 continue
             if tracker not in tracker_points:
                 tracker_points[tracker] = self._create_empty_tracker_point(time, tracker)
             # Append stats for these torrents to their relevant tracker/client points
             if tracker not in historical_tracker_stats[self.name]:
                 historical_tracker_stats[self.name][tracker] = {}
-            historical_tracker_stats[self.name][tracker][get_unique_torrent_id(torrent.get("hashString"), torrent.get("addedDate"))] = {
-                "downloaded": torrent.get("downloadedEver"),
-                "uploaded": torrent.get("uploadedEver"),
+            historical_tracker_stats[self.name][tracker][get_unique_torrent_id(torrent.hash_string, int(torrent.added_date.timestamp()))] = {
+                "downloaded": torrent.downloaded_ever,
+                "uploaded": torrent.uploaded_ever,
             }
-            status = get_status(torrent.get("status"))
+            status = get_status(torrent.status)
             if status == "downloading":
                 stats_point["fields"]["downloading"] += 1
                 tracker_points[tracker]["fields"]["downloading"] += 1
@@ -144,13 +145,13 @@ class TransmissionClient(object):
             elif status == "stopped":
                 stats_point["fields"]["stopped"] += 1
                 tracker_points[tracker]["fields"]["stopped"] += 1
-            if torrent.get("error") != 0:
+            if torrent.error != 0:
                 stats_point["fields"]["errored"] += 1
                 tracker_points[tracker]["fields"]["errored"] += 1
-            tracker_points[tracker]["fields"]["download_speed"] += torrent.get("rateDownload")
-            tracker_points[tracker]["fields"]["upload_speed"] += torrent.get("rateUpload")
-            tracker_points[tracker]["fields"]["connected_peers"] += torrent.get("peersConnected")
-            stats_point["fields"]["connected_peers"] += torrent.get("peersConnected")
+            tracker_points[tracker]["fields"]["download_speed"] += torrent.rate_download
+            tracker_points[tracker]["fields"]["upload_speed"] += torrent.rate_upload
+            tracker_points[tracker]["fields"]["connected_peers"] += torrent.peers_connected
+            stats_point["fields"]["connected_peers"] += torrent.peers_connected
             if not self.disable_individual_collection:
                 # Create point for this individual torrent
                 points.append(
@@ -159,19 +160,19 @@ class TransmissionClient(object):
                         "time": time,
                         "tags": {
                             "client_name": self.name,
-                            "infohash": torrent.get("hashString"),
-                            "torrent_name": torrent.get("name"),
+                            "infohash": torrent.hash_string,
+                            "torrent_name": torrent.name,
                             "tracker": tracker,
-                            "error": str(torrent.get("error")),
+                            "error": str(torrent.error),
                             "status": status,
                         },
                         "fields": {
-                            "downloaded": torrent.get("downloadedEver"),
-                            "uploaded": torrent.get("uploadedEver"),
-                            "download_speed": torrent.get("rateDownload"),
-                            "upload_speed": torrent.get("rateUpload"),
-                            "connected_peers": torrent.get("peersConnected"),
-                            "percent_done": float(torrent.get("percentDone")),
+                            "downloaded": torrent.downloaded_ever,
+                            "uploaded": torrent.uploaded_ever,
+                            "download_speed": torrent.rate_download,
+                            "upload_speed": torrent.rate_upload,
+                            "connected_peers": torrent.peers_connected,
+                            "percent_done": float(torrent.percent_done),
                         },
                     }
                 )
@@ -187,16 +188,17 @@ class TransmissionClient(object):
         return points
 
 
-def get_status(status_code: int) -> str:
-    # https://github.com/transmission/transmission/blob/7e1da2d8fe5c95299414e013aee6cbae3b1e2e65/libtransmission/transmission.h#L1651
-    if status_code == 0:
-        return "stopped"
-    elif status_code <= 2:
+def get_status(status: "Status") -> str:
+    # https://transmission-rpc.readthedocs.io/en/stable/torrent.html#transmission_rpc.Status
+    if status.check_pending or status.checking:
         return "checking"
-    elif status_code <= 4:
+    elif status.download_pending or status.downloading:
         return "downloading"
-    else:
+    elif status.seed_pending or status.seeding:
         return "seeding"
+    else:
+        # Catch-all, in case new statuses are added in the future, they will default to stopped
+        return "stopped"
 
 
 def get_unique_torrent_id(infohash: str, add_date: int) -> str:

@@ -1,2 +1,2 @@
-transmission-putio==1.0.4
-influxdb==5.3.1
+transmission-rpc==7.0.10
+influxdb==5.3.2
