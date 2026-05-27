@@ -110,6 +110,7 @@ class TransmissionClient(object):
                 "rateUpload",
                 "status",
                 "trackers",
+                "trackerStats",
                 "uploadedEver",
             ]
         )
@@ -148,6 +149,11 @@ class TransmissionClient(object):
             if torrent.error != 0:
                 stats_point["fields"]["errored"] += 1
                 tracker_points[tracker]["fields"]["errored"] += 1
+            elif torrent.tracker_stats:
+                first_stat = torrent.tracker_stats[0]
+                if first_stat.has_announced and not first_stat.last_announce_succeeded:
+                    stats_point["fields"]["errored"] += 1
+                    tracker_points[tracker]["fields"]["errored"] += 1
             tracker_points[tracker]["fields"]["download_speed"] += torrent.rate_download
             tracker_points[tracker]["fields"]["upload_speed"] += torrent.rate_upload
             tracker_points[tracker]["fields"]["connected_peers"] += torrent.peers_connected
