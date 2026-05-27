@@ -4,5 +4,4 @@ max-line-length = 150
 max-complexity = 15
 import-order-style = pep8
 application-import-names = transmission_influxdb
-select = A,B,B9,C,E,F,I,N,T4,W
-mypy-config = mypy.ini
+select = A,B,B9,C,E,F,I,N,W
