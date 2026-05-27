@@ -1,5 +1,5 @@
-from typing import List, Dict, Any, cast
 import logging
+from typing import Any, Dict, List, cast
 
 import influxdb
 

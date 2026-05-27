@@ -1,18 +1,13 @@
 FROM python:3.14-alpine
+COPY --from=ghcr.io/astral-sh/uv:0.11.16-python3.14-alpine /usr/local/bin/uv /usr/local/bin/uv
+WORKDIR /app
+RUN apk --no-cache upgrade && apk --no-cache add make
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
-WORKDIR /usr/src/app
-RUN apk --no-cache upgrade
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
 
-# Install build dependencies
-RUN apk --no-cache add g++
-# Install python dev dependencies
-COPY requirements.txt .
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-COPY dev_requirements.txt .
-RUN python3 -m pip install --no-cache-dir --upgrade -r dev_requirements.txt
-
-# Copy our actual application
 COPY --chown=1000:1000 . .
 RUN chmod 777 .
-
-CMD [ "sh", "tools.sh", "full-test" ]
+CMD ["make", "full-test"]

@@ -51,20 +51,23 @@ In order to run this, there are different requirements for the local machine run
 - Local Machine (with Docker)
   - No additional requirements. See below if you do not wish to use docker.
 - Local Machine (without Docker)
-  - Python 3.6+ with the packages from `requirements.txt` installed (`python3 -m pip install -r requirements.txt`)
+  - Python 3.14+ with the packages from `requirements.txt` installed (`python3 -m pip install -r requirements.txt`)
+  - Alternatively, if using [uv](https://docs.astral.sh/uv/), simply run `uv sync --no-dev` to install dependencies.
   - This _should_ be able to be ran on windows or any unix system, but only tested on linux.
     (If there are bugs running this on another OS, please report them)
 
 ### Starting
 
-If using docker, simply run the container, mounting your desired config.json into `/usr/src/app/config.json`, and any other necessary directories.
+If using docker, simply run the container, mounting your desired config.json into `/app/config.json`, and any other necessary directories.
 
-i.e. `docker run -v $(pwd)/config.json:/usr/src/app/config.json cheeseandcereal/transmission_influxdb_exporter:latest`
+i.e. `docker run -v $(pwd)/config.json:/app/config.json cheeseandcereal/transmission_influxdb_exporter:latest`
 
 If not using docker, download the source code here, ensure the above requirements are met,
 create and ensure you have a config.json in your working directory,
 then start the program with `python3 -m transmission_influxdb.main` in a terminal of some sort.
-(`python3` may need to be replaced with `python` depening on how it was installed).
+(`python3` may need to be replaced with `python` depending on how it was installed).
+
+If using uv, you can simply run `uv run python -m transmission_influxdb.main` or `make run`.
 
 #### Systemd Example Service
 
@@ -86,6 +89,38 @@ RestartSec=30
 [Install]
 WantedBy=default.target
 ```
+
+## Development
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management and [ruff](https://docs.astral.sh/ruff/) for linting/formatting.
+
+### Setup
+
+```sh
+uv sync  # installs all dependencies (including dev) into a .venv
+```
+
+### Common Commands
+
+| Command | Description |
+|---------|-------------|
+| `make run` | Run the application |
+| `make lint` | Run ruff linter, ruff formatter check, and mypy |
+| `make format` | Auto-fix lint issues and format code |
+| `make full-test` | Run all checks (requirements sync, lint, tests) |
+| `make docker-test` | Run all checks inside a Docker container |
+| `make lock` | Update `uv.lock` and regenerate `requirements.txt` |
+| `make clean` | Remove build artifacts and caches |
+
+### Dependency Changes
+
+After adding, removing, or updating dependencies in `pyproject.toml`:
+
+```sh
+make lock  # updates uv.lock and regenerates requirements.txt
+```
+
+The `make full-test` target will fail if `requirements.txt` is out of sync with `uv.lock`.
 
 ## Grafana Dashboard
 

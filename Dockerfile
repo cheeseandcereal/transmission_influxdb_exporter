@@ -1,19 +1,23 @@
 FROM python:3.14-alpine AS base
-
-WORKDIR /usr/src/app
+WORKDIR /app
 RUN apk --no-cache upgrade
 
 FROM base AS builder
-# Install build dependencies
-# RUN apk --no-cache add make
-COPY requirements.txt .
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
+COPY --from=ghcr.io/astral-sh/uv:0.11.16-python3.14-alpine /usr/local/bin/uv /usr/local/bin/uv
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+
+COPY . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
 FROM base AS release
-# Copy the installed python dependencies from the builder
-COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
-# Copy the app
-COPY --chown=1000:1000 . .
-
+COPY --from=builder /app/.venv /app/.venv
+COPY --chown=1000:1000 transmission_influxdb ./transmission_influxdb
+ENV PATH="/app/.venv/bin:$PATH"
 USER 1000:1000
-CMD [ "python", "-m", "transmission_influxdb.main" ]
+CMD ["python", "-m", "transmission_influxdb.main"]

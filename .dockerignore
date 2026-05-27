@@ -33,5 +33,7 @@ config.json
 .gitignore
 .dockerignore
 Dockerfile
+Dockerfile.test
 README*
 .github
+grafana

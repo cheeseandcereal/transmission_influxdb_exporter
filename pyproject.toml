@@ -1,0 +1,50 @@
+[project]
+name = "transmission-influxdb-exporter"
+version = "1.0.0"
+requires-python = ">=3.14"
+dependencies = [
+    "transmission-rpc==7.0.10",
+    "influxdb==5.3.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "coverage",
+]
+
+[tool.mypy]
+python_version = "3.14"
+platform = "linux"
+warn_unused_configs = true
+follow_imports = "normal"
+ignore_missing_imports = true
+warn_no_return = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_incomplete_defs = true
+strict_equality = true
+allow_redefinition = false
+disallow_any_generics = true
+disallow_subclassing_any = true
+warn_return_any = false
+disallow_any_unimported = false
+implicit_reexport = true
+check_untyped_defs = true
+strict_optional = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[tool.ruff]
+line-length = 150
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["A", "B", "C4", "E", "F", "I", "N", "W"]
+ignore = ["E203", "E266", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["transmission_influxdb"]

@@ -1,13 +1,9 @@
-from typing import List
+import logging
 import os
 import time
-import logging
+from typing import List
 
-
-from transmission_influxdb import utils
-from transmission_influxdb import config
-from transmission_influxdb import influxdb
-from transmission_influxdb import transmission
+from transmission_influxdb import config, influxdb, transmission, utils
 
 log = logging.getLogger("main")
 

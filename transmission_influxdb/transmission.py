@@ -1,14 +1,13 @@
-from typing import List, Dict, Optional, Any, TYPE_CHECKING
-import re
-import json
 import base64
 import hashlib
+import json
 import logging
+import re
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from transmission_rpc import Client
 
-from transmission_influxdb import influxdb
-from transmission_influxdb import utils
+from transmission_influxdb import influxdb, utils
 
 if TYPE_CHECKING:
     from transmission_rpc import Status
